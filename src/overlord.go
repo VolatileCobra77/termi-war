@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
@@ -115,17 +114,21 @@ func (g *Game) Update() error {
 		}
 	case StateMenu:
 		if !g.inputActive {
-			if ebiten.IsKeyPressed(ebiten.KeyRight) && time.Now().Sub(g.lastInputTime).Seconds() == 1 {
+			if ebiten.IsKeyPressed(ebiten.KeyRight) && time.Now().Sub(g.lastInputTime).Milliseconds() >= 100 {
+
+				println("Right key pressed")
 				g.lastInputTime = time.Now()
 				g.currentMode = (g.currentMode + 1) % Mode(len(modeNames))
 			}
-			if ebiten.IsKeyPressed(ebiten.KeyLeft) && time.Now().Sub(g.lastInputTime).Seconds() == 1 {
+			if ebiten.IsKeyPressed(ebiten.KeyLeft) && time.Now().Sub(g.lastInputTime).Milliseconds() >= 100 {
+				println("Left key pressed")
 				g.lastInputTime = time.Now()
 				g.currentMode = (g.currentMode - 1 + Mode(len(modeNames))) % Mode(len(modeNames))
 			}
 			if ebiten.IsKeyPressed(ebiten.KeyEnter) {
 				// If they pick DANGER or DESTRUCTION, you could trigger your warning here
 				g.inputActive = true
+				println("Enter pressed")
 			}
 			return nil
 		}
@@ -166,32 +169,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		text.Draw(screen, line, mplusNormalFont, 20, 20+(i*30), hackerGreen)
 	}
 
-	if g.state == StateMenu {
-		text.Draw(screen, "CHOOSE MODE: ", mplusNormalFont, 20, 20, hackerGreen)
-		text.Draw(screen, "SAFE", mplusNormalFont, 150, 20, hackerGreen)
-		text.Draw(screen, "DESTRUCTION", mplusNormalFont, 200, 20, hackerGreen)
-		text.Draw(screen, "DANGER", mplusNormalFont, 325, 20, hackerGreen)
-		ebitenutil.DebugPrintAt(screen, "ENTER GAME DIRECTORY: > _", 20, 40)
-	}
-	startX := 30
-	for i, name := range modeNames {
-		displayColor := color.RGBA{0, 100, 0, 255} // Dim green for inactive
-		prefix := "  "
-		suffix := "  "
-
-		if Mode(i) == g.currentMode {
-			displayColor = hackerGreen // Bright green
-			prefix = "[ "
-			suffix = " ]"
-		}
-
-		str := prefix + name + suffix
-		text.Draw(screen, str, mplusNormalFont, startX, 100, displayColor)
-
-		// Offset the next word based on string length
-		startX += 200
-	}
-
 	// 2. Draw the Input Line
 	if g.inputActive {
 		prompt := "ENTER TARGET DIRECTORY: " + g.inputBuffer
@@ -199,7 +176,27 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		if (time.Now().UnixMilli()/500)%2 == 0 {
 			prompt += "_"
 		}
-		text.Draw(screen, prompt, mplusNormalFont, 30, 200, hackerGreen)
+		text.Draw(screen, prompt, mplusNormalFont, 20, 30, hackerGreen)
+	} else {
+		text.Draw(screen, "SELECT DIFFICULTY: ", mplusNormalFont, 20, 30, hackerGreen)
+		startX := 30
+		for i, name := range modeNames {
+			displayColor := color.RGBA{0, 100, 0, 255} // Dim green for inactive
+			prefix := "  "
+			suffix := "  "
+
+			if Mode(i) == g.currentMode {
+				displayColor = hackerGreen // Bright green
+				prefix = "[ "
+				suffix = " ]"
+			}
+
+			str := prefix + name + suffix
+			text.Draw(screen, str, mplusNormalFont, startX, 100, displayColor)
+
+			// Offset the next word based on string length
+			startX += len(str) * 12
+		}
 	}
 }
 
@@ -214,7 +211,7 @@ func main() {
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("Termi-War")
 	if err := ebiten.RunGame(&Game{
-		state:         StateBooting,
+		state:         StateMenu,
 		terminalColor: color.RGBA{51, 255, 51, 255},
 		lastUpdate:    time.Now(),
 		lastInputTime: time.Now(),
