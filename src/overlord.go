@@ -206,6 +206,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func main() {
+	println("Starting OVERLORD...")
 	ebiten.SetWindowSize(1920, 1080)
 
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
